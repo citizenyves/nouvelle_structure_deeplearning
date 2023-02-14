@@ -4,8 +4,14 @@ import torch
 from torchvision.utils import make_grid
 
 def get_device():
+    print(f"PyTorch version:{torch.__version__}")  # 1.12.1 이상
+    print(f"MPS 장치를 지원하도록 build 되었는지: {torch.backends.mps.is_built()}")  # True 여야 합니다.
+    print(f"MPS 장치가 사용 가능한지: {torch.backends.mps.is_available()}")  # True 여야 합니다.
+
     if torch.cuda.is_available():
-        return torch.device("cuda")
+        return torch.device('cuda')
+    elif torch.backends.mps.is_available():
+        return torch.device('mps')
     return torch.device("cpu")
 
 

@@ -15,11 +15,10 @@ class Net(nn.Module):
         super().__init__()
         self.conv1 = nn.Conv2d(in_channels=3, out_channels=6, kernel_size=4, stride=1)
         self.pool = nn.MaxPool2d(2, 2)
-        self.conv2 = nn.Conv2d(in_channels=6, out_channels=16, kernel_size=4, stride=1)
-        self.conv2 = nn.Conv2d(6, 16, 5)
-        self.fc1 = nn.Linear(16 * 5 * 5, 120)
+        self.conv2 = nn.Conv2d(in_channels=6, out_channels=12, kernel_size=4, stride=1)
+        self.fc1 = nn.Linear(12 * 5 * 5, 120)
         self.fc2 = nn.Linear(120, 84)
-        self.fc3 = nn.Linear(84, 10)
+        self.fc3 = nn.Linear(84, 100)
 
     def forward(self, x):
         x = self.pool(F.relu(self.conv1(x)))
@@ -39,7 +38,7 @@ def train(net, train_dataloader, datainfo):
 
         # defining the loss function and the optimizer
         criterion = nn.CrossEntropyLoss()
-        optimizer = optim.Adam(net.parameters(), lr=0.07)
+        optimizer = optim.Adam(net.parameters(), lr=0.0001)
 
         # checking if GPU is available
         if torch.cuda.is_available():
@@ -48,8 +47,6 @@ def train(net, train_dataloader, datainfo):
 
         # training
         for batch_i, (inputs, labels) in enumerate(train_dataloader):
-            # get the inputs; data is a list of [inputs, labels]
-            # inputs, labels = data
 
             # zero the parameter gradients
             optimizer.zero_grad()
@@ -62,13 +59,13 @@ def train(net, train_dataloader, datainfo):
 
             # print statistics
             running_loss += loss.item()
-            _, predicted = torch.max(outputs.data, 1)
-            total += labels.size(0)
+            _, predicted = torch.max(outputs.data, 1) # predicted labels (1, 16)
+            total += labels.size(0) # 16 = batch_size
             correct += predicted.eq(labels.data).cpu().sum()
 
-            if batch_i % 2000 == 1999:    # print every 2000 mini-batches
+            if batch_i % 125 == 124:    # print every 2000 mini-batches
                 print('| Epoch [%3d/%3d] Iter[%3d/%3d]\t\tLoss: %.4f Acc@1: %.3f%%'
-                             % (epoch, epochs, batch_i + 1, (datainfo[0] // datainfo[1]) + 1, loss.item(), 100. * correct / total))
+                             % (epoch+1, epochs, batch_i+1, (datainfo[0] // datainfo[2]), loss.item(), correct / total * 100.))
                 # print(f'[{epoch + 1}, {batch_i + 1:5d}] loss: {running_loss / 2000:.3f}')
                 running_loss = 0.0
 
@@ -84,7 +81,7 @@ if __name__ == '__main__':
 
     # tr = 50000, vl = 10000
 
-    train_data = CIFAR100(download=True, root="/Users/taeyeon/Projet/data", transform=train_transform)
+    train_data = CIFAR100(download=False, root="/Users/taeyeon/Projet/data", transform=train_transform)
     valid_data = CIFAR100(root="/Users/taeyeon/Projet/data", train=False, transform=valid_transform)
 
     # data informations
@@ -99,8 +96,8 @@ if __name__ == '__main__':
     # device checking
     device = get_device()
     print(device)
-    train_dl = ToDeviceLoader(train_dataloader, device)
-    test_dl = ToDeviceLoader(valid_dataloader, device)
+    train_dataloader = ToDeviceLoader(train_dataloader, device)
+    valid_dataloader = ToDeviceLoader(valid_dataloader, device)
 
 
     # defining the model
